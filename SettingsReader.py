@@ -2,14 +2,14 @@ import configparser
 import os
 
 
-class Params:
+class SettingsReader:
     def __init__(self):
         if not os.path.exists("settings.ini"):
-            raise FileExistsError("Вы удалили конфиурационный файл settings.ini")
+            raise FileExistsError("Вы удалили конфигурационный файл settings.ini")
         self.config = configparser.ConfigParser()
         self.config.read("settings.ini")
 
-    def getScriptParams(self, arg: str) -> str:
+    def get_param(self, arg: str) -> str:
         """
         Параметры скрипта
         :param arg: название параметра
@@ -18,11 +18,11 @@ class Params:
         value = self.config["Script"][arg]
         return True if value.lower() == "true" else False if value.lower() == "false" else value
 
-    def getStatusParams(self, arg: str) -> str:
+    def get_status_param(self, arg: str) -> bool:
         """
         Параметры статуса
         :param arg: название параметра
         :return: значение
         """
         value = self.config["Status"][arg]
-        return True if value.lower() == "true" else False
+        return value.lower() == "true"

@@ -1,20 +1,20 @@
 import datetime
 import time
 import requests
-from SettingsReader import Params
+from SettingsReader import SettingsReader
 
 
-def VkMethod(methodName: str, methodParams: dict = None) -> dict or list or str or int:
+def vk_method(name: str, params: dict = None):
     """
-    :param methodName: название метода
-    :param methodParams: параметры метода
+    :param name: название метода
+    :param params: параметры метода
     :return: ответ ВКонтакте
     """
-    if methodParams is None:
-        methodParams = {}
-    methodParams['v'] = params.getScriptParams("apiVersion")
-    methodParams['access_token'] = params.getScriptParams("access_token")
-    r = requests.post('https://api.vk.com/method/' + methodName, methodParams)
+    if params is None:
+        params = {}
+    params['v'] = settings.get_param("api_version")
+    params['access_token'] = settings.get_param("access_token")
+    r = requests.post('https://api.vk.com/method/' + name, params)
     r_json = r.json()
     if 'error' in r_json:
         raise requests.exceptions.RequestException(f'[{r_json["error"]["error_code"]}] '
@@ -24,51 +24,51 @@ def VkMethod(methodName: str, methodParams: dict = None) -> dict or list or str 
 
 numbers = {'0': '0⃣', '1': '1⃣', '2': '2⃣', '3': '3⃣', '4': '4⃣', '5': '5⃣', '6': '6⃣', '7': '7⃣',
            '8': '8⃣', '9': '9⃣'}
-params = Params()
+settings = SettingsReader()
 while True:
     try:
-        if params.getScriptParams("status"):
+        if settings.get_param("status"):
             status = ''
-            if params.getStatusParams("time"):
+            if settings.get_status_param("time"):
                 t = datetime.datetime.now()
                 status += f"🕰 {t.strftime('%H:%M')} | 🗓 {t.strftime('%d.%m.%Y')} | "
 
-            if params.getStatusParams("photoProfile") and params.getStatusParams("photoLikeCount"):
-                LikeCount = VkMethod('photos.get', {'album_id': 'profile', 'rev': 1, 'extended': 1, 'count': 1})
-                status += f"❤ На аве: {LikeCount['items'][0]['likes']['count']} | "
+            if settings.get_status_param("photo_like_count"):
+                like_count = vk_method('photos.get', {'album_id': 'profile', 'rev': 1, 'extended': 1, 'count': 1})
+                status += f"❤ На аве: {like_count['items'][0]['likes']['count']} | "
 
-            if params.getStatusParams("followersCount"):
-                FollowersCount = VkMethod('users.getFollowers', {'count': '1000'})
-                status += f"👥 Подписиков: {FollowersCount['count']} | "
+            if settings.get_status_param("followers_count"):
+                followers_count = vk_method('users.getFollowers', {'count': '1000'})
+                status += f"👥 Подписчиков: {followers_count['count']} | "
 
-            if params.getStatusParams("unreadMessagesCount"):
-                MessageCount = VkMethod('account.getCounters', {'filter': 'messages'})
-                status += f"📬 Сообщений: {MessageCount['messages']} | "
+            if settings.get_status_param("unread_messages_count"):
+                message_count = vk_method('account.getCounters', {'filter': 'messages'})
+                status += f"📬 Сообщений: {message_count['messages']} | "
 
-            if params.getStatusParams("blackListMemberCount"):
-                memberCount = VkMethod('account.getBanned', {'count': '200'})
-                status += f"⛔ В ЧС: {memberCount['count']} | "
+            if settings.get_status_param("blacklist_member_count"):
+                blacklist_member_count = vk_method('account.getBanned', {'count': '200'})
+                status += f"⛔ В ЧС: {blacklist_member_count['count']} | "
 
-            if params.getStatusParams("giftsCount"):
-                gifts = VkMethod('gifts.get', {'count': '200'})
+            if settings.get_status_param("gifts_count"):
+                gifts = vk_method('gifts.get', {'count': '200'})
                 status += f"🎁 Подарки: {gifts['count']} | "
 
-            if params.getStatusParams("decor"):
+            if settings.get_status_param("decor"):
                 for number in numbers:
                     status = status.replace(number, numbers[number])
 
-            VkMethod("status.set", {"text": status[:-3]})
+            vk_method("status.set", {"text": status[:-3]})
 
-        if params.getScriptParams("eternalOnline"):
-            VkMethod("account.setOnline")
+        if settings.get_param("eternal_online"):
+            vk_method("account.setOnline")
 
-        if params.getScriptParams("deleteAllFriendsRequests"):
-            VkMethod("friends.deleteAllRequests")
+        if settings.get_param("delete_all_friends_requests"):
+            vk_method("friends.deleteAllRequests")
 
     except Exception as Error:
-        t = datetime.datetime.now()  # получение полного времени для ошибки
+        t = datetime.datetime.now()
         print('При установки статуса произошла ошибка. Убедитесь, что все настройки в settings.ini введены правильно'
               f'\nВремя:\n {t.strftime("%H:%M")}\nОшибка:\n{str(Error)}\n{"--" * 5}')
 
     finally:
-        time.sleep(int(params.getScriptParams("timeToSleep")))
+        time.sleep(int(settings.get_param("time_to_sleep")))
